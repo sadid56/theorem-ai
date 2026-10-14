@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@repo/ui";
+import { AuthStatus } from "./components/AuthStatus";
 import heroImg from "./assets/hero.png";
 import reactLogo from "./assets/react.svg";
 import viteLogo from "./assets/vite.svg";
@@ -30,6 +31,10 @@ function App() {
           >
             Count is {count}
           </Button>
+        </div>
+
+        <div style={{ marginTop: 32, width: "100%" }}>
+          <AuthStatus />
         </div>
       </section>
 

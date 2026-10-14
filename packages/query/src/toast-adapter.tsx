@@ -1,4 +1,10 @@
-import { createContext, useContext, useMemo, type FC, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useMemo,
+  type FC,
+  type ReactNode,
+} from "react";
 
 export interface ToastAdapter {
   success?: (message: string) => void;
@@ -14,9 +20,16 @@ export interface ToastAdapterProviderProps {
   children: ReactNode;
 }
 
-export const ToastAdapterProvider: FC<ToastAdapterProviderProps> = ({ toast = null, children }) => {
+export const ToastAdapterProvider: FC<ToastAdapterProviderProps> = ({
+  toast = null,
+  children,
+}) => {
   const value = useMemo(() => toast, [toast]);
-  return <ToastAdapterContext.Provider value={value}>{children}</ToastAdapterContext.Provider>;
+  return (
+    <ToastAdapterContext.Provider value={value}>
+      {children}
+    </ToastAdapterContext.Provider>
+  );
 };
 
 export function useToastAdapter(): ToastAdapter | null {

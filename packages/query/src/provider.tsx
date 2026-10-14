@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from "react";
 import {
+  environmentManager,
   QueryClient,
   QueryClientProvider,
-  isServer,
 } from "@tanstack/react-query";
 import { ToastAdapterProvider, type ToastAdapter } from "./toast-adapter";
 
@@ -20,7 +20,7 @@ export function createQueryClient(): QueryClient {
 let browserQueryClient: QueryClient | undefined = undefined;
 
 export function getQueryClient(): QueryClient {
-  if (isServer) {
+  if (environmentManager.isServer()) {
     return createQueryClient();
   }
   if (!browserQueryClient) {

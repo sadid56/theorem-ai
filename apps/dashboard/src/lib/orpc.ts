@@ -7,6 +7,7 @@ import { RPCLink } from "@orpc/client/fetch";
 import { createTanstackQueryUtils } from "@orpc/tanstack-query";
 import type { AppContract, ContractRouterClient } from "@repo/contract";
 import { getRpcUrl } from "./env";
+import { supabase } from "@repo/auth";
 
 function toKebabCase(str: string): string {
   return str.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
@@ -14,8 +15,18 @@ function toKebabCase(str: string): string {
 
 const rawLink = new RPCLink({
   url: () => getRpcUrl(),
-  headers: (options: any) => {
-    return (options?.context as any)?.headers || {};
+  headers: async (options: any) => {
+    const customHeaders = (options?.context as any)?.headers || {};
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data?.session?.access_token;
+      return {
+        ...customHeaders,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
+    } catch {
+      return customHeaders;
+    }
   },
   fetch: (input: RequestInfo | URL, init?: RequestInit) => {
     return fetch(input, {
