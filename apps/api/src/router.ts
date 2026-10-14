@@ -1,14 +1,17 @@
-import { projectRouter } from "./modules/projects/projects.router";
-import { scanRouter } from "./modules/scans/scans.router";
-import { authRouter, userRouter } from "./modules/auth/auth.router";
-import { qaRouter } from "./modules/qa-suites/qa.router";
+import { productsRouter } from "./modules/products/products.router";
+import { factsRouter } from "./modules/facts/facts.router";
+import { questionsRouter } from "./modules/questions/questions.router";
+import { scriptsRouter } from "./modules/scripts/scripts.router";
+import { timelineRouter } from "./modules/timeline/timeline.router";
+import { jobsRouter } from "./modules/jobs/jobs.router";
 
 export const appRouter = {
-  projects: projectRouter,
-  scans: scanRouter,
-  auth: authRouter,
-  user: userRouter,
-  qa: qaRouter,
+  products: productsRouter,
+  facts: factsRouter,
+  questions: questionsRouter,
+  scripts: scriptsRouter,
+  timeline: timelineRouter,
+  jobs: jobsRouter,
 };
 
 export type AppRouter = typeof appRouter;

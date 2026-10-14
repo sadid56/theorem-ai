@@ -1,191 +1,75 @@
-import fastify from "fastify";
+import fastify, { type FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
-import { recentLogs, logEmitter, logger, type LogEntry } from "@repo/config";
-import { runScan } from "./runner";
-import { db } from "@repo/database";
-import { scans } from "@repo/database/schema";
-import { eq } from "drizzle-orm";
-import { WORKER_PORT, MAX_CONCURRENT_SCANS } from "@repo/config";
+import { JobProcessor } from "./jobs/job-processor";
+import { ScriptGenerator } from "./agents/script-generator";
+import { ClaimVerifier } from "./agents/claim-verifier";
+import type { CanonicalTimeline, TimelineOverlay } from "./types/timeline";
 
-export interface ActiveJob {
-  scanId: string;
-  targetUrl: string;
-  startedAt: Date;
-}
+export function buildWorkerServer(): FastifyInstance {
+  const app = fastify({ logger: false });
+  const processor = new JobProcessor();
 
-const activeJobs = new Map<string, ActiveJob>();
-const cancelledScans = new Set<string>();
+  app.register(cors, { origin: "*" });
 
-export function addActiveJob(job: { scanId: string; targetUrl: string }) {
-  cancelledScans.delete(job.scanId);
-  activeJobs.set(job.scanId, { ...job, startedAt: new Date() });
-}
+  app.get("/health", async () => ({
+    status: "healthy",
+    service: "theorem-worker",
+    timestamp: new Date().toISOString(),
+  }));
 
-export function removeActiveJob(scanId: string) {
-  activeJobs.delete(scanId);
-}
+  app.post("/agents/script-variants", async (req) => {
+    const body = req.body as any;
+    const variants = ScriptGenerator.generateThreeVariants({
+      productName: body.productName,
+      price: body.price,
+      currency: body.currency,
+      facts: body.facts || [],
+      questions: body.questions || [],
+      targetAngle: body.targetAngle,
+    });
 
-export function markScanCancelled(scanId: string) {
-  cancelledScans.add(scanId);
-}
+    const validatedVariants = variants.map((v) => {
+      const verification = ClaimVerifier.verifyScriptClaims(v.claims, body.facts || []);
+      return {
+        ...v,
+        claims: verification.approvedMappings.map((m) => ({
+          ...m,
+          verified: true,
+        })),
+        isCompliant: verification.valid,
+      };
+    });
 
-export function isScanCancelled(scanId: string): boolean {
-  return cancelledScans.has(scanId);
-}
-
-export function getActiveJobs(): ActiveJob[] {
-  return Array.from(activeJobs.values());
-}
-
-export async function createWorkerServer() {
-  const app = fastify({
-    logger: false,
+    return { variants: validatedVariants };
   });
 
-  await app.register(cors, {
-    origin: true,
-    credentials: true,
+  app.post("/jobs/generate", async (req) => {
+    const body = req.body as any;
+    const result = await processor.executeFullGeneration({
+      jobId: body.jobId || `job_${Date.now()}`,
+      briefId: body.briefId || "brief_1",
+      variant: body.variant,
+      providerType: body.providerType || "mock",
+      existingProofFootageUrl: body.existingProofFootageUrl,
+    });
+    return result;
   });
 
-  app.addHook("onResponse", async (request, reply) => {
-    const ms = Math.round(reply.elapsedTime);
-    logger.http(request.method, request.url, reply.statusCode, ms);
-  });
-
-  app.get("/", async () => {
-    const jobs = getActiveJobs();
-    return {
-      service: "rove-worker",
-      status: "operational",
-      port: WORKER_PORT,
-      maxConcurrentScans: MAX_CONCURRENT_SCANS,
-      activeJobsCount: jobs.length,
-
-      activeJobs: jobs,
-      uptimeSec: Math.floor(process.uptime()),
+  app.post("/jobs/compose-overlays", async (req) => {
+    const body = req.body as {
+      timeline: CanonicalTimeline;
+      overlays: TimelineOverlay[];
     };
-  });
-
-  app.get("/health", async () => {
-    const jobs = getActiveJobs();
+    const updated = await processor.executeOverlayRecomposition(
+      body.timeline,
+      body.overlays,
+    );
     return {
-      status: "ok",
-      timestamp: new Date().toISOString(),
-      uptimeSec: Math.floor(process.uptime()),
-      memoryMb: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
-      activeJobsCount: jobs.length,
-      activeJobs: jobs,
-    };
-  });
-
-  app.get("/status", async () => {
-    const queued = await db
-      .select()
-      .from(scans)
-      .where(eq(scans.status, "queued"));
-
-    const running = await db
-      .select()
-      .from(scans)
-      .where(eq(scans.status, "scanning"));
-
-    const jobs = getActiveJobs();
-    return {
-      activeJobsCount: jobs.length,
-      activeJobs: jobs,
-      queueCount: queued.length,
-      runningCount: running.length,
-      recentLogsCount: recentLogs.length,
-    };
-  });
-
-  app.post<{ Body: { scanId?: string; targetUrl?: string } }>(
-    "/jobs/run",
-    async (req, reply) => {
-      const { scanId, targetUrl } = req.body || {};
-
-      if (!scanId && !targetUrl) {
-        return reply.status(400).send({
-          error: "Missing required parameter: scanId or targetUrl",
-        });
-      }
-
-      let targetScanId = scanId;
-
-      if (!targetScanId && targetUrl) {
-        const [created] = await db
-          .insert(scans)
-          .values({
-            targetUrl,
-            status: "queued",
-          })
-          .returning();
-        targetScanId = created?.id;
-      }
-
-      if (!targetScanId) {
-        return reply
-          .status(500)
-          .send({ error: "Failed to create or find scan" });
-      }
-
-      runScan(targetScanId).catch((err) => {
-        logger.error(`Error executing scan [${targetScanId}]:`, err);
-      });
-
-      return reply.status(202).send({
-        message: "Scan job accepted and dispatched to browser engine",
-        scanId: targetScanId,
-      });
-    },
-  );
-
-  app.post("/jobs/cancel", async (request, reply) => {
-    const { scanId } = request.body as { scanId?: string };
-    if (!scanId) {
-      return reply.status(400).send({ error: "scanId is required" });
-    }
-    markScanCancelled(scanId);
-    removeActiveJob(scanId);
-    await db
-      .update(scans)
-      .set({ status: "cancelled", completedAt: new Date() })
-      .where(eq(scans.id, scanId as any));
-    logger.worker(`Scan [${scanId}] was cancelled by user.`);
-    return reply.send({
       success: true,
-      message: `Scan ${scanId} cancelled successfully`,
-    });
-  });
-
-  app.get("/logs", async (req) => {
-    const limit = Number((req.query as any)?.limit || 100);
-    return {
-      total: recentLogs.length,
-      logs: recentLogs.slice(-limit),
+      timeline: updated,
+      modelCallsIncurred: 0,
+      message: "Overlays updated without calling generative video models",
     };
-  });
-
-  app.get("/logs/stream", (request, reply) => {
-    reply.raw.setHeader("Content-Type", "text/event-stream");
-    reply.raw.setHeader("Cache-Control", "no-cache");
-    reply.raw.setHeader("Connection", "keep-alive");
-    reply.raw.setHeader("Access-Control-Allow-Origin", "*");
-
-    const initialLogs = recentLogs.slice(-30);
-    for (const log of initialLogs) {
-      reply.raw.write(`data: ${JSON.stringify(log)}\n\n`);
-    }
-
-    const onLog = (log: LogEntry) => {
-      reply.raw.write(`data: ${JSON.stringify(log)}\n\n`);
-    };
-
-    logEmitter.on("log", onLog);
-
-    request.raw.on("close", () => {
-      logEmitter.off("log", onLog);
-    });
   });
 
   return app;
