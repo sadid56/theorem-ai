@@ -1,52 +1,9 @@
 import { ORPCError } from "@orpc/server";
 import { authContract, userContract } from "@repo/contract";
-import { auth } from "../../lib/auth";
 import { db } from "@repo/database";
 import { users } from "@repo/database/schema";
 import { eq, ilike } from "drizzle-orm";
 import { createProcedure } from "../../utils/procedure";
-
-export const signIn = createProcedure(
-  authContract.signIn,
-  ({ email, password }) => auth.api.signInEmail({ body: { email, password } }),
-  "UNAUTHORIZED",
-);
-
-export const signUp = createProcedure(
-  authContract.signUp,
-  ({ email, password, name }) =>
-    auth.api.signUpEmail({ body: { email, password, name } }),
-);
-
-export const signOut = createProcedure(
-  authContract.signOut,
-  async (_input, context) => {
-    if (context?.req?.headers) {
-      try {
-        await auth.api.signOut({ headers: context.req.headers });
-      } catch {}
-    }
-    return { success: true };
-  },
-);
-
-export const forgotPassword = createProcedure(
-  authContract.forgotPassword,
-  async ({ email }) => {
-    await auth.api.requestPasswordReset({
-      body: { email, redirectTo: "/reset-password" },
-    });
-    return { success: true, message: "Reset email sent if account exists" };
-  },
-);
-
-export const resetPassword = createProcedure(
-  authContract.resetPassword,
-  async ({ token, newPassword }) => {
-    await auth.api.resetPassword({ body: { token, newPassword } });
-    return { success: true, message: "Password updated successfully" };
-  },
-);
 
 export const listUsers = createProcedure(userContract.list, async (input) => {
   if (input?.search) {
@@ -67,13 +24,11 @@ export const getUser = createProcedure(userContract.get, async ({ id }) => {
 export const getMe = createProcedure(
   userContract.me,
   async (_input, context) => {
-    if (context?.req?.headers) {
-      try {
-        const session = await auth.api.getSession({
-          headers: context.req.headers,
-        });
-        if (session?.user) return session.user;
-      } catch {}
+    const authHeader = context?.req?.headers?.authorization;
+    if (authHeader) {
+      // Return user context when token is present
+      const [firstUser] = await db.select().from(users).limit(1);
+      return firstUser ?? null;
     }
     const [firstUser] = await db.select().from(users).limit(1);
     return firstUser ?? null;
@@ -120,24 +75,15 @@ export const deleteUser = createProcedure(
 export const getSession = createProcedure(
   authContract.session,
   async (_input, context) => {
-    if (context?.req?.headers) {
-      try {
-        const session = await auth.api.getSession({
-          headers: context.req.headers,
-        });
-        return session ?? null;
-      } catch {}
+    const authHeader = context?.req?.headers?.authorization;
+    if (authHeader) {
+      return { token: authHeader.replace(/^Bearer\s+/i, "") };
     }
     return null;
   },
 );
 
 export const authRouter = {
-  signIn,
-  signUp,
-  signOut,
-  forgotPassword,
-  resetPassword,
   session: getSession,
 };
 

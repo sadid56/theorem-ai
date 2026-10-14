@@ -63,7 +63,8 @@ All workspaces (`api`, `worker`, `web`, `@repo/database`) automatically inherit 
 Key environment variables to configure:
 
 - `DATABASE_URL`: Supabase / PostgreSQL connection pooler string
-- `BETTER_AUTH_SECRET`: Secret key for session encryption
+- `VITE_SUPABASE_URL`: Supabase project URL for authentication
+- `VITE_SUPABASE_ANON_KEY`: Supabase anon/public API key
 - `GEMINI_API_KEY`: Google Gemini API key for automated AI QA diagnostics
 - `GEMINI_MODEL`: Gemini model name (default: `gemini-2.5-flash-lite`)
 - `API_URL`: Fastify API gateway endpoint (default: `http://localhost:4000`)

@@ -19,7 +19,6 @@
     "@repo/config": "workspace:*",
     "@repo/contract": "workspace:*",
     "@repo/database": "workspace:*",
-    "better-auth": "^1.1.18",
     "chalk": "^5.4.1",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.38.4",

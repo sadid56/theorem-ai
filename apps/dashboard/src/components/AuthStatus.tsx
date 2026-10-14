@@ -5,7 +5,8 @@ import { useToast } from "../context/ToastContext";
 import { useAuth } from "@repo/auth";
 
 export function AuthStatus() {
-  const { user, loading, isConfigured, signInWithPassword, signUp, signOut } = useAuth();
+  const { user, loading, isConfigured, signInWithPassword, signUp, signOut } =
+    useAuth();
   const toast = useToast();
 
   const [email, setEmail] = useState("");
@@ -13,7 +14,11 @@ export function AuthStatus() {
   const [submitting, setSubmitting] = useState(false);
 
   if (loading) {
-    return <Box sx={{ p: 2, textAlign: "center", color: tokens.textMuted }}>Checking authentication...</Box>;
+    return (
+      <Box sx={{ p: 2, textAlign: "center", color: tokens.textMuted }}>
+        Checking authentication...
+      </Box>
+    );
   }
 
   if (!isConfigured) {
@@ -30,11 +35,12 @@ export function AuthStatus() {
           textAlign: "left",
         }}
       >
-        <Typography variant='subtitle2' sx={{ fontWeight: 700, mb: 0.5 }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>
           Supabase Not Configured
         </Typography>
-        <Typography variant='body2' sx={{ fontSize: "0.82rem" }}>
-          Please add <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> to your <code>.env</code> file.
+        <Typography variant="body2" sx={{ fontSize: "0.82rem" }}>
+          Please add <code>VITE_SUPABASE_URL</code> and{" "}
+          <code>VITE_SUPABASE_ANON_KEY</code> to your <code>.env</code> file.
         </Typography>
       </Box>
     );
@@ -53,15 +59,21 @@ export function AuthStatus() {
           textAlign: "left",
         }}
       >
-        <Typography variant='subtitle2' sx={{ color: tokens.textPrimary, mb: 0.5 }}>
+        <Typography
+          variant="subtitle2"
+          sx={{ color: tokens.textPrimary, mb: 0.5 }}
+        >
           Signed in as: <strong>{user.email}</strong>
         </Typography>
-        <Typography variant='caption' sx={{ color: tokens.textMuted, display: "block", mb: 2 }}>
+        <Typography
+          variant="caption"
+          sx={{ color: tokens.textMuted, display: "block", mb: 2 }}
+        >
           User ID: {user.id}
         </Typography>
         <Button
-          variant='danger'
-          size='small'
+          variant="danger"
+          size="small"
           onClick={async () => {
             const { error } = await signOut();
             if (error) {
@@ -89,30 +101,33 @@ export function AuthStatus() {
         textAlign: "left",
       }}
     >
-      <Typography variant='h6' sx={{ color: tokens.textPrimary, mb: 2, fontSize: "1.1rem" }}>
+      <Typography
+        variant="h6"
+        sx={{ color: tokens.textPrimary, mb: 2, fontSize: "1.1rem" }}
+      >
         Supabase Authentication
       </Typography>
 
       <Stack spacing={2}>
         <Input
-          label='Email'
-          placeholder='name@example.com'
+          label="Email"
+          placeholder="name@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={submitting}
         />
         <Input
-          label='Password'
-          type='password'
-          placeholder='••••••••'
+          label="Password"
+          type="password"
+          placeholder="••••••••"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           disabled={submitting}
         />
 
-        <Stack direction='row' spacing={1.5} sx={{ pt: 1 }}>
+        <Stack direction="row" spacing={1.5} sx={{ pt: 1 }}>
           <Button
-            variant='primary'
+            variant="primary"
             loading={submitting}
             onClick={async () => {
               if (!email || !password) {
@@ -133,7 +148,7 @@ export function AuthStatus() {
           </Button>
 
           <Button
-            variant='outlined'
+            variant="outlined"
             disabled={submitting}
             onClick={async () => {
               if (!email || !password) {

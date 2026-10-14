@@ -16,7 +16,10 @@ import type {
   Provider,
   SupabaseClient,
 } from "@supabase/supabase-js";
-import { supabase as defaultSupabase, isSupabaseConfigured as defaultIsConfigured } from "./client";
+import {
+  supabase as defaultSupabase,
+  isSupabaseConfigured as defaultIsConfigured,
+} from "./client";
 
 export interface AuthContextType {
   user: User | null;
@@ -26,10 +29,16 @@ export interface AuthContextType {
   client: SupabaseClient;
   signInWithPassword: (
     credentials: SignInWithPasswordCredentials,
-  ) => Promise<{ error: AuthError | null; data: { user: User | null; session: Session | null } }>;
+  ) => Promise<{
+    error: AuthError | null;
+    data: { user: User | null; session: Session | null };
+  }>;
   signUp: (
     credentials: SignUpWithPasswordCredentials,
-  ) => Promise<{ error: AuthError | null; data: { user: User | null; session: Session | null } }>;
+  ) => Promise<{
+    error: AuthError | null;
+    data: { user: User | null; session: Session | null };
+  }>;
   signInWithOAuth: (
     provider: Provider,
     redirectTo?: string,
@@ -110,7 +119,10 @@ export function AuthProvider({
         provider,
         options: {
           redirectTo:
-            redirectTo || (typeof window !== "undefined" ? window.location.origin : undefined),
+            redirectTo ||
+            (typeof window !== "undefined"
+              ? window.location.origin
+              : undefined),
         },
       });
       return { error };
@@ -132,7 +144,9 @@ export function AuthProvider({
       const { error } = await client.auth.resetPasswordForEmail(email, {
         redirectTo:
           redirectTo ||
-          (typeof window !== "undefined" ? `${window.location.origin}/reset-password` : undefined),
+          (typeof window !== "undefined"
+            ? `${window.location.origin}/reset-password`
+            : undefined),
       });
       return { error };
     },

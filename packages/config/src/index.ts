@@ -56,14 +56,14 @@ export interface EnvironmentVariables {
 
   // Database & Supabase
   DATABASE_URL: string;
+  SUPABASE_URL?: string;
+  SUPABASE_ANON_KEY?: string;
 
   // Fastify API Gateway
   PORT: number;
   HOST: string;
   CORS_ORIGIN: string;
   LOG_LEVEL: string;
-  BETTER_AUTH_URL: string;
-  BETTER_AUTH_SECRET: string;
 
   // Worker Crawler Engine
   WORKER_PORT: number;
@@ -143,9 +143,16 @@ const PORT = Number(raw.PORT || 4000);
 const HOST = raw.HOST || "0.0.0.0";
 const CORS_ORIGIN = raw.CORS_ORIGIN || "*";
 const LOG_LEVEL = raw.LOG_LEVEL || "info";
-const BETTER_AUTH_URL = raw.BETTER_AUTH_URL || "http://localhost:4000";
-const BETTER_AUTH_SECRET = raw.BETTER_AUTH_SECRET || "";
-const NEXT_PUBLIC_API_URL = raw.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const SUPABASE_URL =
+  raw.SUPABASE_URL ||
+  raw.VITE_SUPABASE_URL ||
+  raw.NEXT_PUBLIC_SUPABASE_URL ||
+  "";
+const SUPABASE_ANON_KEY =
+  raw.SUPABASE_ANON_KEY ||
+  raw.VITE_SUPABASE_ANON_KEY ||
+  raw.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  "";
 
 const WORKER_PORT = Number(raw.WORKER_PORT || 4001);
 const WORKER_HOST = raw.WORKER_HOST || "0.0.0.0";
@@ -189,8 +196,8 @@ export const appConfig = (): EnvironmentVariables => ({
   HOST,
   CORS_ORIGIN,
   LOG_LEVEL,
-  BETTER_AUTH_URL,
-  BETTER_AUTH_SECRET,
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY,
   WORKER_PORT,
   WORKER_HOST,
   WORKER_URL,
@@ -226,8 +233,8 @@ export {
   HOST,
   CORS_ORIGIN,
   LOG_LEVEL,
-  BETTER_AUTH_URL,
-  BETTER_AUTH_SECRET,
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY,
   WORKER_PORT,
   WORKER_HOST,
   WORKER_URL,
