@@ -4,4 +4,5 @@ export * from "./components/dropdown";
 export * from "./components/input";
 export * from "./components/sidebar";
 export * from "./components/tabs";
+export * from "./lib/media-url";
 export * from "./utils";

@@ -14,6 +14,10 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/material": "^6.4.5",
+    "@orpc/client": "^1.15.6",
+    "@orpc/tanstack-query": "^1.15.6",
+    "@repo/contract": "workspace:*",
+    "@repo/query": "workspace:*",
     "@repo/ui": "workspace:*",
     "react": "19.2.8",
     "react-dom": "19.2.8"

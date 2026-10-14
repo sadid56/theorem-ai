@@ -145,6 +145,7 @@ const CORS_ORIGIN = raw.CORS_ORIGIN || "*";
 const LOG_LEVEL = raw.LOG_LEVEL || "info";
 const BETTER_AUTH_URL = raw.BETTER_AUTH_URL || "http://localhost:4000";
 const BETTER_AUTH_SECRET = raw.BETTER_AUTH_SECRET || "";
+const NEXT_PUBLIC_API_URL = raw.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 const WORKER_PORT = Number(raw.WORKER_PORT || 4001);
 const WORKER_HOST = raw.WORKER_HOST || "0.0.0.0";
